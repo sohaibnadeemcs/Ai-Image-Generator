@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Image Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #120d0a;
+    --bg-2: #1a1210;
+    --paper: #f3ead9;
+    --ink: #f2e9dc;
+    --ink-dim: #9c8d7c;
+    --ink-faint: #6b5f52;
+    --safelight: #ff5a36;
+    --safelight-dim: #a8412a;
+    --safelight-glow: rgba(255, 90, 54, 0.16);
+    --card: #17110d;
+    --border: rgba(255, 90, 54, 0.16);
+    --border-soft: rgba(242, 233, 220, 0.08);
+  }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+    padding: 40px 20px 60px;
+    color: var(--ink);
+    overflow-x: hidden;
+    background: var(--bg);
+    position: relative;
+  }
+
+  /* ── Ambient darkroom glow (single safelight, not multi-orb) ── */
+  .safelight-glow {
+    position: fixed;
+    top: -20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 900px;
+    height: 700px;
+    background: radial-gradient(ellipse at center, var(--safelight-glow) 0%, transparent 65%);
+    z-index: 0;
+    pointer-events: none;
+    animation: glowPulse 8s ease-in-out infinite;
+  }
+  @keyframes glowPulse {
+    0%, 100% { opacity: 0.75; }
+    50% { opacity: 1; }
+  }
+
+  /* ── Fine grain texture overlay ── */
+  .grain {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .container { max-width: 720px; margin: 0 auto; position: relative; z-index: 1; }
+
+  /* ── Header ── */
+  .header { text-align: center; margin-bottom: 40px; }
+
+  .header-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem; font-weight: 500; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--safelight);
+    margin-bottom: 18px;
+  }
+  .header-eyebrow::before, .header-eyebrow::after {
+    content: ''; width: 5px; height: 5px; border-radius: 50%;
+    background: var(--safelight); box-shadow: 0 0 8px var(--safelight);
+  }
+
+  .header h1 {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 3.1rem;
+    color: var(--paper);
+    line-height: 1.05;
+    margin-bottom: 14px;
+    letter-spacing: 0.01em;
+  }
+
+  .header p {
+    font-size: 0.92rem; color: var(--ink-dim); line-height: 1.6;
+    max-width: 430px; margin: 0 auto;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ── Main Card — styled like a film frame ── */
+  .main-card {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 4px;
+    padding: 36px 32px;
+    margin-bottom: 22px;
+    position: relative;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.55);
+  }
+
+  /* sprocket holes along top & bottom, like film stock */
+  .main-card::before, .main-card::after {
+    content: '';
+    position: absolute;
+    left: 24px; right: 24px;
+    height: 1px;
+    background-image: repeating-linear-gradient(to right, var(--border-soft) 0, var(--border-soft) 6px, transparent 6px, transparent 18px);
+  }
+  .main-card::before { top: 14px; }
+  .main-card::after { bottom: 14px; }
+
+  .field-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem; font-weight: 500; color: var(--ink-faint);
+    text-transform: uppercase; letter-spacing: 0.14em;
+    margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+  }
+  .field-label .idx { color: var(--safelight-dim); }
+
+  textarea {
+    width: 100%; height: 104px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border-soft);
+    border-radius: 2px; padding: 15px;
+    font-size: 0.92rem; font-family: 'IBM Plex Sans', sans-serif;
+    color: var(--ink); resize: none; outline: none;
+    line-height: 1.6; transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none; margin-bottom: 26px;
+  }
+  textarea:focus { border-color: var(--safelight-dim); box-shadow: 0 0 0 3px rgba(255,90,54,0.08); }
+  textarea::placeholder { color: var(--ink-faint); font-size: 0.88rem; }
+
+  /* ── Style selector — horizontal tab strip instead of button grid ── */
+  .style-strip {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px;
+  }
+  .style-tab {
+    padding: 7px 13px;
+    background: transparent;
+    border: 1px solid var(--border-soft);
+    border-radius: 20px;
+    color: var(--ink-dim); font-size: 0.76rem; font-weight: 500;
+    font-family: 'IBM Plex Mono', monospace;
+    cursor: pointer; transition: all 0.2s; -webkit-appearance: none;
+  }
+  .style-tab:hover { border-color: var(--safelight-dim); color: var(--ink); }
+  .style-tab.active {
+    border-color: var(--safelight);
+    color: var(--bg);
+    background: var(--safelight);
+    font-weight: 600;
+  }
+
+  /* ── Size selector ── */
+  .size-row { display: flex; gap: 10px; margin-bottom: 30px; }
+  .size-btn {
+    flex: 1; padding: 12px 8px;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid var(--border-soft);
+    border-radius: 2px;
+    color: var(--ink-dim); font-size: 0.78rem; font-weight: 500;
+    font-family: 'IBM Plex Mono', monospace;
+    cursor: pointer; transition: all 0.2s; text-align: center;
+    -webkit-appearance: none; line-height: 1.5;
+  }
+  .size-btn small { color: var(--ink-faint); font-size: 0.68rem; }
+  .size-btn:hover { border-color: var(--safelight-dim); color: var(--ink); }
+  .size-btn.active { border-color: var(--safelight); color: var(--safelight); background: rgba(255,90,54,0.07); }
+
+  /* ── Prompt ideas ── */
+  .ideas-section { margin-top: 4px; }
+  .ideas-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem; color: var(--ink-faint); margin-bottom: 10px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .ideas-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .idea-chip {
+    background: transparent; border: 1px dashed var(--border-soft);
+    border-radius: 3px; padding: 5px 11px; font-size: 0.74rem;
+    color: var(--ink-faint); cursor: pointer; transition: all 0.2s;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .idea-chip:hover { border-color: var(--safelight-dim); color: var(--ink); border-style: solid; }
+
+  /* ── Generate button ── */
+  .generate-btn {
+    width: 100%; padding: 17px;
+    background: var(--safelight);
+    color: #1a0d08; border: none; border-radius: 2px;
+    font-size: 0.95rem; font-weight: 600; cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    transition: all 0.2s;
+    margin-top: 28px;
+  }
+  .generate-btn:hover { background: #ff6f4a; box-shadow: 0 0 24px rgba(255,90,54,0.35); }
+  .generate-btn:active { transform: scale(0.99); }
+  .generate-btn:disabled { background: #3a2a22; color: var(--ink-faint); cursor: not-allowed; box-shadow: none; }
+
+  /* ── Output Card ── */
+  .output-card {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 4px; overflow: hidden;
+    margin-bottom: 20px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.55);
+  }
+
+  .output-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 13px 22px; background: rgba(0,0,0,0.35);
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .output-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem; font-weight: 500; color: var(--safelight);
+    text-transform: uppercase; letter-spacing: 0.12em;
+  }
+
+  .download-btn {
+    background: transparent; color: var(--ink-dim);
+    border: 1px solid var(--border-soft); padding: 6px 14px;
+    font-size: 0.72rem; font-weight: 500; border-radius: 2px;
+    font-family: 'IBM Plex Mono', monospace;
+    cursor: pointer; transition: all 0.2s; -webkit-appearance: none;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .download-btn:hover { border-color: var(--safelight); color: var(--safelight); }
+
+  .output-body { padding: 22px; display: flex; justify-content: center; align-items: center; min-height: 300px; }
+
+  /* ── Loading — developing tray feel ── */
+  .loading-container { text-align: center; padding: 30px; width: 100%; }
+  .tray {
+    width: 100%; max-width: 320px; height: 6px; margin: 0 auto 22px;
+    background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;
+    position: relative;
+  }
+  .tray::after {
+    content: ''; position: absolute; top:0; left:0; height: 100%; width: 40%;
+    background: linear-gradient(90deg, transparent, var(--safelight), transparent);
+    animation: sweep 1.3s ease-in-out infinite;
+  }
+  @keyframes sweep {
+    0% { left: -40%; }
+    100% { left: 100%; }
+  }
+  .loading-text {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--ink-dim); font-size: 0.82rem; letter-spacing: 0.03em;
+  }
+  .loading-sub { color: var(--ink-faint); font-size: 0.72rem; margin-top: 8px; font-family: 'IBM Plex Mono', monospace; }
+
+  /* ── Generated image — the image itself is NEVER filtered, so its real colors always show ── */
+  .develop-wrap { position: relative; display: inline-block; max-width: 100%; }
+
+  #generatedImg {
+    display: block; max-width: 100%; border-radius: 2px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  }
+
+  /* an overlay layer sits on top and fades away — it never touches the image's own pixels */
+  .develop-overlay {
+    position: absolute; inset: 0; border-radius: 2px;
+    background: linear-gradient(180deg, rgba(255,90,54,0.5), rgba(18,13,10,0.85));
+    animation: developReveal 1.4s ease forwards;
+    pointer-events: none;
+  }
+  @keyframes developReveal {
+    0%   { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  .placeholder-state { text-align: center; color: var(--ink-faint); }
+  .placeholder-frame {
+    width: 64px; height: 64px; margin: 0 auto 16px;
+    border: 1px solid var(--border-soft); border-radius: 2px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .placeholder-frame::before, .placeholder-frame::after {
+    content: ''; position: absolute; width: 20px; height: 1px; background: var(--border-soft);
+  }
+  .placeholder-frame::before { transform: rotate(45deg); }
+  .placeholder-frame::after { transform: rotate(-45deg); }
+  .placeholder-text {
+    font-size: 0.82rem; font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ── Error ── */
+  .error-box {
+    background: rgba(168, 65, 42, 0.1); border: 1px solid var(--safelight-dim);
+    border-radius: 3px; padding: 15px 18px; color: #ff9478;
+    font-size: 0.85rem; margin-bottom: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center; font-size: 0.72rem; color: var(--ink-faint);
+    margin-top: 30px; font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.03em;
+  }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: 3px; }
+
+  @media (max-width: 600px) {
+    body { padding: 28px 14px 40px; }
+    .header h1 { font-size: 2.3rem; }
+    .main-card { padding: 26px 20px; }
+    .size-row { flex-wrap: wrap; }
+    .size-btn { min-width: calc(50% - 5px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .safelight-glow, .tray::after, .develop-overlay { animation: none; opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="safelight-glow"></div>
+  <div class="grain"></div>
+
+  <div class="container">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="header-eyebrow">Darkroom · Text to Image</div>
+      <h1>Image Lab</h1>
+      <p>Describe a scene. Choose a process. Watch it develop.</p>
+    </div>
+
+    <!-- Input Card -->
+    <div class="main-card">
+      <label class="field-label"><span class="idx">01</span> Prompt</label>
+      <textarea id="promptInput" placeholder="A futuristic city at night with neon lights and flying cars, cinematic..."></textarea>
+
+      <!-- Style Selection -->
+      <label class="field-label"><span class="idx">02</span> Process</label>
+      <div class="style-strip">
+        <button class="style-tab active" onclick="selectStyle(this, '')">Default</button>
+        <button class="style-tab" onclick="selectStyle(this, 'photorealistic, 4k, highly detailed')">Realistic</button>
+        <button class="style-tab" onclick="selectStyle(this, 'digital art, vibrant colors, fantasy')">Digital Art</button>
+        <button class="style-tab" onclick="selectStyle(this, 'oil painting, impressionist, artistic brushstrokes')">Oil Painting</button>
+        <button class="style-tab" onclick="selectStyle(this, 'pencil sketch, black and white, detailed linework')">Sketch</button>
+        <button class="style-tab" onclick="selectStyle(this, 'anime style, vibrant, manga art')">Anime</button>
+        <button class="style-tab" onclick="selectStyle(this, 'minimalist, clean, modern design')">Minimalist</button>
+        <button class="style-tab" onclick="selectStyle(this, 'cyberpunk, neon lights, futuristic, dark')">Cyberpunk</button>
+        <button class="style-tab" onclick="selectStyle(this, 'watercolor, soft, dreamy, pastel colors')">Watercolor</button>
+      </div>
+
+      <!-- Size Selection -->
+      <label class="field-label"><span class="idx">03</span> Frame size</label>
+      <div class="size-row">
+        <button class="size-btn active" onclick="selectSize(this, '512', '512')">512×512<br><small>Square</small></button>
+        <button class="size-btn" onclick="selectSize(this, '768', '512')">768×512<br><small>Landscape</small></button>
+        <button class="size-btn" onclick="selectSize(this, '512', '768')">512×768<br><small>Portrait</small></button>
+        <button class="size-btn" onclick="selectSize(this, '1024', '1024')">1024×1024<br><small>HD Square</small></button>
+      </div>
+
+      <!-- Prompt Ideas -->
+      <div class="ideas-section">
+        <div class="ideas-label">Quick ideas</div>
+        <div class="ideas-row">
+          <span class="idea-chip" onclick="useIdea(this)">Futuristic city at night</span>
+          <span class="idea-chip" onclick="useIdea(this)">Astronaut on Mars</span>
+          <span class="idea-chip" onclick="useIdea(this)">Dragon in the mountains</span>
+          <span class="idea-chip" onclick="useIdea(this)">Robot playing chess</span>
+          <span class="idea-chip" onclick="useIdea(this)">Ocean sunset paradise</span>
+          <span class="idea-chip" onclick="useIdea(this)">Cat wearing a suit</span>
+        </div>
+      </div>
+
+      <button class="generate-btn" id="generateBtn" onclick="generateImage()">Develop Image</button>
+    </div>
+
+    <!-- Output Card -->
+    <div class="output-card" id="outputCard" style="display:none;">
+      <div class="output-header">
+        <div class="output-title">Print</div>
+        <button class="download-btn" id="downloadBtn" onclick="downloadImage()" style="display:none;">Download</button>
+      </div>
+      <div class="output-body" id="outputBody">
+        <div class="placeholder-state">
+          <div class="placeholder-frame"></div>
+          <div class="placeholder-text">Awaiting exposure</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div id="errorBox" class="error-box" style="display:none;"></div>
+
+    <p class="footer">Built by Sohaib Nadeem — Powered by Pollinations AI (Free)</p>
+  </div>
+
+  <script>
+    let selectedStyle = '';
+    let selectedWidth = '512';
+    let selectedHeight = '512';
+    let currentImageUrl = '';
+
+    function selectStyle(btn, style) {
+      document.querySelectorAll('.style-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedStyle = style;
+    }
+
+    function selectSize(btn, w, h) {
+      document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedWidth = w;
+      selectedHeight = h;
+    }
+
+    function useIdea(chip) {
+      document.getElementById('promptInput').value = chip.textContent;
+    }
+
+    async function generateImage() {
+      const prompt = document.getElementById('promptInput').value.trim();
+      if (!prompt) { showError("Enter a prompt before developing an image."); return; }
+      if (prompt.length < 3) { showError("Prompt is too short. Describe the image in more detail."); return; }
+
+      document.getElementById('outputCard').style.display = 'block';
+      document.getElementById('errorBox').style.display = 'none';
+      document.getElementById('downloadBtn').style.display = 'none';
+      document.getElementById('outputBody').innerHTML = `
+        <div class="loading-container">
+          <div class="tray"></div>
+          <p class="loading-text">Developing in the tray...</p>
+          <p class="loading-sub">Usually takes 10–20 seconds</p>
+        </div>
+      `;
+
+      const btn = document.getElementById('generateBtn');
+      btn.disabled = true; btn.textContent = 'Developing...';
+
+      try {
+        const fullPrompt = selectedStyle ? `${prompt}, ${selectedStyle}` : prompt;
+        const encodedPrompt = encodeURIComponent(fullPrompt);
+
+        const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${selectedWidth}&height=${selectedHeight}&nologo=true&seed=${Math.floor(Math.random()*99999)}`;
+
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+
+        img.onload = function() {
+          currentImageUrl = imageUrl;
+          document.getElementById('outputBody').innerHTML = `
+            <div class="develop-wrap">
+              <img id="generatedImg" src="${imageUrl}" alt="AI Generated Image"/>
+              <div class="develop-overlay"></div>
+            </div>
+          `;
+          // remove the overlay from the DOM once it's faded out, so nothing can ever get stuck
+          const overlay = document.querySelector('.develop-overlay');
+          if (overlay) {
+            overlay.addEventListener('animationend', () => overlay.remove());
+          }
+          document.getElementById('downloadBtn').style.display = 'block';
+          btn.disabled = false; btn.textContent = 'Develop Image';
+        };
+
+        img.onerror = function() {
+          throw new Error("Image generation failed. Try a different prompt.");
+        };
+
+        img.src = imageUrl;
+
+      } catch(error) {
+        document.getElementById('outputCard').style.display = 'none';
+        showError("Something went wrong: " + error.message);
+        btn.disabled = false; btn.textContent = 'Develop Image';
+      }
+    }
+
+    function downloadImage() {
+      const img = document.getElementById('generatedImg');
+      if (!img) return;
+      const a = document.createElement('a');
+      a.href = currentImageUrl;
+      a.download = 'ai-generated-image.jpg';
+      a.target = '_blank';
+      a.click();
+    }
+
+    function showError(msg) {
+      const box = document.getElementById('errorBox');
+      box.textContent = msg;
+      box.style.display = 'block';
+      setTimeout(() => box.style.display = 'none', 6000);
+    }
+  </script>
+</body>
+</html>
