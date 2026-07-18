@@ -1,26 +1,38 @@
-# 🎨 AI Image Generator
+# 🎨 Image Lab — AI Image Generator
 
-Generate stunning AI images from text prompts instantly — 100% free, no API key required!
+A darkroom-themed AI image generator that turns text prompts into images 9 style presets, 4 frame sizes, and zero setup required. No API key, no backend, no sign-up.
 
-## ✨ Features
-- 9 image styles — Realistic, Anime, Cyberpunk, Oil Painting, Sketch, Watercolor & more
-- 4 canvas sizes — Square, Landscape, Portrait, HD
-- Quick idea chips for instant inspiration
-- Download generated images
-- Regenerate with one click
-- Unique aurora animation background
-- Mobile responsive
+**[🚀 Live Demo — try it here](https://aiimagegenerator-neon.vercel.app/)**
 
-## 🛠️ Tech Stack
-- HTML5, CSS3, JavaScript
-- Pollinations AI API (Free — no API key needed)
+---
 
-## 🚀 How to Use
-1. Download or clone the repo
-2. Open `index.html` in your browser
-3. Type your prompt, select style & size
-4. Click Generate Image!
+## How it works
 
-## 👨‍💻 Built By
-Sohaib Nadeem — CS Graduate | AI Developer | Karachi, Pakistan
-github.com/sohaibnadeemcs
+Type a prompt, pick a style and frame size, and the app builds a request directly to the [Pollinations AI](https://pollinations.ai) image endpoint — a free, keyless image-generation API. There's no server, no database, and no secrets: the entire app is a single static HTML file that runs completely in the browser.
+
+```
+Your prompt + style + size
+        │
+        ▼
+https://image.pollinations.ai/prompt/{encoded_prompt}?width=...&height=...&seed=...
+        │
+        ▼
+   Image renders directly in the page
+```
+
+## Features
+
+- **9 style presets** — Realistic, Digital Art, Oil Painting, Sketch, Anime, Minimalist, Cyberpunk, Watercolor, and Default
+- **4 frame sizes** — Square, Landscape, Portrait, HD Square
+- **Quick idea prompts** — one-click starting points if you're not sure what to generate
+- **Download & print** generated images directly from the browser
+- **No API key, no backend, no cost** — Pollinations AI is free and keyless
+
+## Tech Stack
+
+- HTML5, CSS3, vanilla JavaScript
+- [Pollinations AI](https://pollinations.ai) — free text-to-image API
+
+---
+
+Built by [Sohaib Nadeem](https://github.com/sohaibnadeemcs) — [LinkedIn](https://linkedin.com/in/sohaib-nadeem-pk)
